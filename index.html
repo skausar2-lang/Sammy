@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indian Open Market - VR Portal Hub</title>
+
+  <!-- Tailwind CSS for modern HUD styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- A-Frame VR Framework -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <!-- A-Frame Event Set Component for Hover Effects -->
+  <script src="https://unpkg.com/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      user-select: none;
+    }
+
+    /* Custom Scrollbars */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #f59e0b;
+      border-radius: 4px;
+    }
+
+    .a-enter-vr {
+      bottom: 20px !important;
+      right: 20px !important;
+    }
+
+    .glow-orange {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100">
+
+  <!-- TOP LEFT TITLE HUD BANNER -->
+  <div class="fixed top-4 left-4 z-50 pointer-events-auto">
+    <div class="bg-black/85 backdrop-blur-md border border-amber-500/50 px-4 py-2 rounded-lg shadow-2xl flex items-center gap-3">
+      <span class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+      <h1 class="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-amber-300">OPEN INDIAN MARKET - VR PORTAL HUB (PAGE 2)</h1>
+    </div>
+  </div>
+
+  <!-- 2D DESKTOP / MOBILE OVERLAY HUD CONTAINER -->
+  <div id="2d-hud" class="fixed inset-y-0 left-0 z-40 p-4 pointer-events-none flex flex-col justify-between max-w-xs w-full pt-16">
+    
+    <!-- Left Navigation HUD Card -->
+    <div class="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-amber-500/40 p-3 rounded-xl shadow-2xl glow-orange">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Indian Market Hub</span>
+        <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">Meta Quest VR</span>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="grid grid-cols-2 gap-1.5 text-[11px] mb-2">
+        <button onclick="toggleDayNight()" class="bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold py-1.5 px-2 rounded border border-slate-700 transition flex items-center justify-center gap-1">
+          ☀️/🌙 Day/Night
+        </button>
+        <button onclick="toggleMaterialOverlay()" class="bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold py-1.5 px-2 rounded border border-slate-700 transition flex items-center justify-center gap-1">
+          🎨 Materials
+        </button>
+        <button onclick="toggleGuidedTour()" id="tour-btn" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold py-1.5 px-2 rounded border border-amber-400 transition col-span-2">
+          ▶ Auto Walkthrough
+        </button>
+      </div>
+    </div>
+
+    <!-- Middle Space Selector List -->
+    <div class="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl my-2 flex-1 flex flex-col min-h-0 shadow-2xl">
+      <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 text-[11px]">
+        <span class="font-bold uppercase text-amber-400">Market Portals</span>
+        <span id="active-space-indicator" class="text-amber-400 font-mono">1 / 4</span>
+      </div>
+
+      <div id="spaces-list" class="space-y-1.5 overflow-y-auto custom-scroll pr-1 flex-1">
+        <!-- Dynamic Space Buttons populated by JS -->
+      </div>
+    </div>
+
+    <!-- Active Zone Card -->
+    <div class="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl shadow-2xl">
+      <h3 id="active-space-title" class="text-xs font-bold text-amber-300">01. Vegetables & Fruits Corner</h3>
+      <p id="active-space-desc" class="text-[11px] text-slate-400 mt-1 line-clamp-2">Fresh organic leafy greens, vibrant mangoes, tomatoes, and traditional woven wicker baskets.</p>
+    </div>
+  </div>
+
+  <!-- BOTTOM LEFT FOOTER BANNER -->
+  <div class="fixed bottom-3 left-4 z-50 pointer-events-none hidden sm:block">
+    <div class="bg-black/90 border border-slate-800 px-3 py-1.5 rounded-md text-[11px] font-mono text-slate-300 tracking-wide">
+      INDIAN MARKET DESIGN - VR PORTAL LAYOUT
+    </div>
+  </div>
+
+  <!-- BOTTOM RIGHT SETTINGS CONTROLS -->
+  <div class="fixed bottom-4 right-20 z-50 pointer-events-auto">
+    <button onclick="toggleUIVisibility()" class="bg-slate-900/90 hover:bg-slate-800 border border-slate-700 p-2 rounded-lg text-slate-300 shadow-xl transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+    </button>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-banner" class="fixed top-4 right-4 z-50 transform translate-x-full transition-transform duration-300 pointer-events-none">
+    <div class="bg-amber-950/90 backdrop-blur-md border border-amber-500/50 text-amber-200 text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+      <svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <span id="toast-message">Notification text...</span>
+    </div>
+  </div>
+
+  <!-- Hidden Canvases for 360 Market Scenes -->
+  <div class="hidden">
+    <canvas id="canvas-space-1" width="2048" height="1024"></canvas>
+    <canvas id="canvas-space-2" width="2048" height="1024"></canvas>
+    <canvas id="canvas-space-3" width="2048" height="1024"></canvas>
+    <canvas id="canvas-space-4" width="2048" height="1024"></canvas>
+  </div>
+
+  <!-- A-FRAME SPATIAL VR SCENE -->
+  <a-scene webxr="optionalFeatures: hit-test, local-floor" embedded class="w-full h-screen">
+
+    <!-- 360-DEGREE ENVIRONMENT SKY (PROCEDURAL CANVAS BACKDROP) -->
+    <a-sky id="sky-bg" color="#0f172a" radius="30" rotation="0 -90 0"></a-sky>
+
+    <!-- DYNAMIC LIGHTING -->
+    <a-entity id="ambient-light" type="ambient" light="color: #ffffff; intensity: 1.0"></a-entity>
+    <a-entity id="dir-light" light="type: directional; color: #fff7ed; intensity: 0.9" position="3 15 5"></a-entity>
+
+    <!-- CAMERA & VR CONTROLLER RIG -->
+    <a-entity id="rig" position="0 1.6 0">
+      <a-camera id="camera" look-controls raycaster="objects: .collidable; far: 15">
+        <a-cursor id="cursor" color="#f59e0b" opacity="0.8" scale="0.8 0.8 0.8"></a-cursor>
+      </a-camera>
+
+      <a-entity id="left-hand" laser-controls="hand: left" raycaster="objects: .collidable; far: 15"></a-entity>
+      <a-entity id="right-hand" laser-controls="hand: right" raycaster="objects: .collidable; far: 15"></a-entity>
+    </a-entity>
+
+    <!-- ================================================================= -->
+    <!-- CENTRAL ISOMETRIC DESIGN PLATFORM (HUB CENTER)                    -->
+    <!-- ================================================================= -->
+    <a-cylinder position="0 -0.1 -3.5" radius="4.5" height="0.2" color="#1e293b" material="metalness: 0.2; roughness: 0.8">
+      <a-ring position="0 0.11 0" rotation="-90 0 0" radius-inner="4.2" radius-outer="4.4" color="#f59e0b" opacity="0.6"></a-ring>
+    </a-cylinder>
+
+    <!-- ================================================================= -->
+    <!-- PORTAL 1: TOP-LEFT - VEGETABLES & FRUITS CORNER                   -->
+    <!-- ================================================================= -->
+    <a-entity id="portal-veg" position="-3.2 1.6 -5" rotation="0 25 0">
+      <!-- Outer Portal Frame -->
+      <a-box class="collidable" width="2.2" height="2.8" depth="0.15" color="#15803d" opacity="0.95" onclick="loadSpace(0)">
+        <a-plane width="2.0" height="2.6" position="0 0 0.08" color="#166534" material="shader: flat">
+          <!-- 3D Mini Produce Display Scene Inside Portal -->
+          <a-cylinder position="-0.5 -0.6 0.2" radius="0.3" height="0.4" color="#d97706"></a-cylinder> <!-- Wicker basket -->
+          <a-sphere position="-0.5 -0.3 0.2" radius="0.25" color="#22c55e"></a-sphere> <!-- Cabbage -->
+          <a-sphere position="0.4 -0.4 0.2" radius="0.22" color="#ef4444"></a-sphere> <!-- Tomatoes -->
+          <a-sphere position="0 -0.5 0.2" radius="0.2" color="#eab308"></a-sphere> <!-- Mangoes -->
+
+          <!-- Floating Info Label -->
+          <a-plane width="1.9" height="0.6" position="0 0.8 0.1" color="#0f172a" opacity="0.9">
+            <a-text value="VEGETABLES & FRUITS CORNER" align="center" width="1.8" position="0 0.15 0.01" color="#4ade80" font="roboto"></a-text>
+            <a-text value="Sabzi & Phal Mandi\nFresh organic greens, tomatoes & fruit stalls." align="center" width="1.2" position="0 -0.12 0.01" color="#cbd5e1"></a-text>
+          </a-plane>
+
+          <a-plane class="collidable" width="1.4" height="0.25" position="0 -0.9 0.1" color="#166534"
+                   event-set__mouseenter="_event: mouseenter; color: #22c55e"
+                   event-set__mouseleave="_event: mouseleave; color: #166534"
+                   onclick="loadSpace(0)">
+            <a-text value="ENTER ZONE ▶" align="center" width="1.8" position="0 0 0.01" color="#ffffff"></a-text>
+          </a-plane>
+        </a-plane>
+      </a-box>
+
+      <!-- HUMAN FIGURE ENTERING PORTAL 1 -->
+      <a-entity id="human-1" position="0.8 -1.2 0.8" rotation="0 -30 0">
+        <a-cylinder position="0 0.6 0" radius="0.18" height="0.8" color="#0284c7"></a-cylinder> <!-- Torso -->
+        <a-sphere position="0 1.15 0" radius="0.14" color="#fca5a5"></a-sphere> <!-- Head -->
+        <a-cylinder position="-0.08 0.15 0.1" radius="0.05" height="0.6" color="#0f172a" rotation="15 0 0"></a-cylinder> <!-- Left Leg -->
+        <a-cylinder position="0.08 0.15 -0.1" radius="0.05" height="0.6" color="#0f172a" rotation="-15 0 0"></a-cylinder> <!-- Right Leg -->
+        <a-text value="Visitor Entering" align="center" width="1.0" position="0 1.4 0" color="#38bdf8"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <!-- ================================================================= -->
+    <!-- PORTAL 2: TOP-RIGHT - FISH & MEAT CORNER                          -->
+    <!-- ================================================================= -->
+    <a-entity id="portal-fish" position="3.2 1.6 -5" rotation="0 -25 0">
+      <!-- Outer Portal Frame -->
+      <a-box class="collidable" width="2.2" height="2.8" depth="0.15" color="#0284c7" opacity="0.95" onclick="loadSpace(1)">
+        <a-plane width="2.0" height="2.6" position="0 0 0.08" color="#0369a1" material="shader: flat">
+          <!-- 3D Mini Fish/Meat Display Scene Inside Portal -->
+          <a-box position="0 -0.6 0.2" width="1.2" height="0.3" depth="0.4" color="#94a3b8"></a-box> <!-- Ice Counter -->
+          <a-cone position="-0.3 -0.38 0.2" radius-bottom="0.08" radius-top="0" height="0.3" rotation="0 0 90" color="#38bdf8"></a-cone> <!-- Fish -->
+          <a-cone position="0.3 -0.38 0.2" radius-bottom="0.08" radius-top="0" height="0.35" rotation="0 0 90" color="#0ea5e9"></a-cone> <!-- Fish -->
+
+          <!-- Floating Info Label -->
+          <a-plane width="1.9" height="0.6" position="0 0.8 0.1" color="#0f172a" opacity="0.9">
+            <a-text value="FISH & MEAT CORNER" align="center" width="1.8" position="0 0.15 0.01" color="#38bdf8" font="roboto"></a-text>
+            <a-text value="Machli & Gosht Bazaar\nFresh river fish, seafood & butchery counters." align="center" width="1.2" position="0 -0.12 0.01" color="#cbd5e1"></a-text>
+          </a-plane>
+
+          <a-plane class="collidable" width="1.4" height="0.25" position="0 -0.9 0.1" color="#0284c7"
+                   event-set__mouseenter="_event: mouseenter; color: #38bdf8"
+                   event-set__mouseleave="_event: mouseleave; color: #0284c7"
+                   onclick="loadSpace(1)">
+            <a-text value="ENTER ZONE ▶" align="center" width="1.8" position="0 0 0.01" color="#ffffff"></a-text>
+          </a-plane>
+        </a-plane>
+      </a-box>
+
+      <!-- HUMAN FIGURE ENTERING PORTAL 2 -->
+      <a-entity id="human-2" position="-0.8 -1.2 0.8" rotation="0 30 0">
+        <a-cylinder position="0 0.6 0" radius="0.18" height="0.8" color="#e11d48"></a-cylinder> <!-- Torso -->
+        <a-sphere position="0 1.15 0" radius="0.14" color="#fca5a5"></a-sphere> <!-- Head -->
+        <a-cylinder position="-0.08 0.15 -0.1" radius="0.05" height="0.6" color="#0f172a" rotation="-15 0 0"></a-cylinder> <!-- Left Leg -->
+        <a-cylinder position="0.08 0.15 0.1" radius="0.05" height="0.6" color="#0f172a" rotation="15 0 0"></a-cylinder> <!-- Right Leg -->
+        <a-text value="Buyer Shopping" align="center" width="1.0" position="0 1.4 0" color="#fb7185"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <!-- ================================================================= -->
+    <!-- PORTAL 3: BOTTOM-LEFT - POOJA ITEMS & SPICES                      -->
+    <!-- ================================================================= -->
+    <a-entity id="portal-pooja" position="-3.5 1.6 -1.8" rotation="0 65 0">
+      <!-- Outer Portal Frame -->
+      <a-box class="collidable" width="2.2" height="2.8" depth="0.15" color="#b45309" opacity="0.95" onclick="loadSpace(2)">
+        <a-plane width="2.0" height="2.6" position="0 0 0.08" color="#92400e" material="shader: flat">
+          <!-- 3D Mini Pooja & Spice Display Scene Inside Portal -->
+          <a-cylinder position="0 -0.5 0.2" radius="0.35" height="0.08" color="#f59e0b"></a-cylinder> <!-- Brass Thali -->
+          <a-cone position="-0.15 -0.38 0.2" radius-bottom="0.08" radius-top="0" height="0.2" color="#ef4444"></a-cone> <!-- Kumkum heap -->
+          <a-cone position="0.15 -0.38 0.2" radius-bottom="0.08" radius-top="0" height="0.2" color="#eab308"></a-cone> <!-- Haldi heap -->
+
+          <!-- Floating Info Label -->
+          <a-plane width="1.9" height="0.6" position="0 0.8 0.1" color="#0f172a" opacity="0.9">
+            <a-text value="POOJA ITEMS & SPICES" align="center" width="1.8" position="0 0.15 0.01" color="#fbbf24" font="roboto"></a-text>
+            <a-text value="Pooja Samagri & Masala\nBrass lamps, incense, marigolds & whole spices." align="center" width="1.2" position="0 -0.12 0.01" color="#cbd5e1"></a-text>
+          </a-plane>
+
+          <a-plane class="collidable" width="1.4" height="0.25" position="0 -0.9 0.1" color="#b45309"
+                   event-set__mouseenter="_event: mouseenter; color: #f59e0b"
+                   event-set__mouseleave="_event: mouseleave; color: #b45309"
+                   onclick="loadSpace(2)">
+            <a-text value="ENTER ZONE ▶" align="center" width="1.8" position="0 0 0.01" color="#ffffff"></a-text>
+          </a-plane>
+        </a-plane>
+      </a-box>
+
+      <!-- HUMAN FIGURE ENTERING PORTAL 3 -->
+      <a-entity id="human-3" position="0.7 -1.2 0.7" rotation="0 -45 0">
+        <a-cylinder position="0 0.6 0" radius="0.18" height="0.8" color="#16a34a"></a-cylinder> <!-- Torso -->
+        <a-sphere position="0 1.15 0" radius="0.14" color="#fca5a5"></a-sphere> <!-- Head -->
+        <a-cylinder position="-0.08 0.15 0.1" radius="0.05" height="0.6" color="#0f172a" rotation="15 0 0"></a-cylinder> <!-- Left Leg -->
+        <a-cylinder position="0.08 0.15 -0.1" radius="0.05" height="0.6" color="#0f172a" rotation="-15 0 0"></a-cylinder> <!-- Right Leg -->
+        <a-text value="Devotee" align="center" width="1.0" position="0 1.4 0" color="#4ade80"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <!-- ================================================================= -->
+    <!-- PORTAL 4: BOTTOM-RIGHT - MISCELLANEOUS & CRAFTS                   -->
+    <!-- ================================================================= -->
+    <a-entity id="portal-misc" position="3.5 1.6 -1.8" rotation="0 -65 0">
+      <!-- Outer Portal Frame -->
+      <a-box class="collidable" width="2.2" height="2.8" depth="0.15" color="#6b21a8" opacity="0.95" onclick="loadSpace(3)">
+        <a-plane width="2.0" height="2.6" position="0 0 0.08" color="#581c87" material="shader: flat">
+          <!-- 3D Mini General Store Scene Inside Portal -->
+          <a-box position="-0.3 -0.5 0.2" width="0.25" height="0.4" depth="0.25" color="#a855f7"></a-box> <!-- Clay Pot -->
+          <a-cylinder position="0.3 -0.5 0.2" radius="0.12" height="0.35" color="#ec4899"></a-cylinder> <!-- Handicraft -->
+
+          <!-- Floating Info Label -->
+          <a-plane width="1.9" height="0.6" position="0 0.8 0.1" color="#0f172a" opacity="0.9">
+            <a-text value="MISCELLANEOUS & CRAFTS" align="center" width="1.7" position="0 0.15 0.01" color="#c084fc" font="roboto"></a-text>
+            <a-text value="General & Hastkala Bazaar\nEarthenware pots, bangles, toys & household items." align="center" width="1.2" position="0 -0.12 0.01" color="#cbd5e1"></a-text>
+          </a-plane>
+
+          <a-plane class="collidable" width="1.4" height="0.25" position="0 -0.9 0.1" color="#6b21a8"
+                   event-set__mouseenter="_event: mouseenter; color: #a855f7"
+                   event-set__mouseleave="_event: mouseleave; color: #6b21a8"
+                   onclick="loadSpace(3)">
+            <a-text value="ENTER ZONE ▶" align="center" width="1.8" position="0 0 0.01" color="#ffffff"></a-text>
+          </a-plane>
+        </a-plane>
+      </a-box>
+
+      <!-- HUMAN FIGURE ENTERING PORTAL 4 -->
+      <a-entity id="human-4" position="-0.7 -1.2 0.7" rotation="0 45 0">
+        <a-cylinder position="0 0.6 0" radius="0.18" height="0.8" color="#d97706"></a-cylinder> <!-- Torso -->
+        <a-sphere position="0 1.15 0" radius="0.14" color="#fca5a5"></a-sphere> <!-- Head -->
+        <a-cylinder position="-0.08 0.15 -0.1" radius="0.05" height="0.6" color="#0f172a" rotation="-15 0 0"></a-cylinder> <!-- Left Leg -->
+        <a-cylinder position="0.08 0.15 0.1" radius="0.05" height="0.6" color="#0f172a" rotation="15 0 0"></a-cylinder> <!-- Right Leg -->
+        <a-text value="Artisan Shopper" align="center" width="1.0" position="0 1.4 0" color="#fbbf24"></a-text>
+      </a-entity>
+    </a-entity>
+
+    <!-- ================================================================= -->
+    <!-- PANEL 1: LEFT SIDE - VIEW OPTIONS CONTROLS                        -->
+    <!-- ================================================================= -->
+    <a-entity id="panel-left-view-options" position="-2.1 1.5 -1.2" rotation="0 40 0">
+      <a-plane width="1.3" height="1.4" color="#0f172a" opacity="0.92" material="shader: flat; transparent: true">
+        <!-- Title Bar -->
+        <a-plane width="1.24" height="0.18" position="0 0.55 0.005" color="#d97706">
+          <a-text value="HUB CONTROLS" align="center" width="1.8" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <!-- Button 1: LIGHTING MODE -->
+        <a-plane class="collidable" width="1.15" height="0.2" position="0 0.3 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="toggleDayNight()">
+          <a-text value="LIGHTING MODE (DAY/NIGHT)" align="center" width="1.3" position="0 0 0.01" color="#f8fafc"></a-text>
+        </a-plane>
+
+        <!-- Button 2: MATERIAL OVERLAY -->
+        <a-plane class="collidable" width="1.15" height="0.2" position="0 0.04 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="toggleMaterialOverlay()">
+          <a-text id="material-btn-text" value="MATERIAL OVERLAY (ON/OFF)" align="center" width="1.3" position="0 0 0.01" color="#f8fafc"></a-text>
+        </a-plane>
+
+        <!-- Button 3: SHOW/HIDE UI -->
+        <a-plane class="collidable" width="1.15" height="0.2" position="0 -0.22 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="toggleUIVisibility()">
+          <a-text value="SHOW/HIDE UI" align="center" width="1.3" position="0 0 0.01" color="#f8fafc"></a-text>
+        </a-plane>
+
+        <!-- Button 4: VIEW CAMERA -->
+        <a-plane class="collidable" width="1.15" height="0.2" position="0 -0.48 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="toggleCameraMode()">
+          <a-text id="camera-btn-text" value="VIEW CAMERA (FREE/ORBIT) ▼" align="center" width="1.2" position="0 0 0.01" color="#f8fafc"></a-text>
+        </a-plane>
+      </a-plane>
+    </a-entity>
+
+    <!-- ================================================================= -->
+    <!-- PANEL 2: RIGHT SIDE - MOVEMENT CONTROLS                           -->
+    <!-- ================================================================= -->
+    <a-entity id="panel-right-movement" position="2.1 1.5 -1.2" rotation="0 -40 0">
+      <a-plane width="1.3" height="1.4" color="#0f172a" opacity="0.92" material="shader: flat; transparent: true">
+        <!-- Title Bar -->
+        <a-plane width="1.24" height="0.18" position="0 0.55 0.005" color="#d97706">
+          <a-text value="MOVEMENT CONTROLS" align="center" width="1.7" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <!-- Spatial D-Pad Buttons -->
+        <a-plane class="collidable" width="0.25" height="0.18" position="0 0.28 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="moveRig(0, -1.2)">
+          <a-text value="↑" align="center" width="2.5" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <a-plane class="collidable" width="0.25" height="0.18" position="-0.3 0.06 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="moveRig(-1.2, 0)">
+          <a-text value="←" align="center" width="2.5" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <a-plane class="collidable" width="0.25" height="0.18" position="0.3 0.06 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="moveRig(1.2, 0)">
+          <a-text value="→" align="center" width="2.5" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <a-plane class="collidable" width="0.25" height="0.18" position="0 -0.16 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="moveRig(0, 1.2)">
+          <a-text value="↓" align="center" width="2.5" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <a-plane class="collidable" width="0.5" height="0.18" position="0.3 0.28 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="rotateRig(90)">
+          <a-text value="ROTATE 90°" align="center" width="1.1" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+
+        <a-plane class="collidable" width="1.15" height="0.18" position="0 -0.42 0.01" color="#1e293b"
+                 event-set__mouseenter="_event: mouseenter; color: #d97706"
+                 event-set__mouseleave="_event: mouseleave; color: #1e293b"
+                 onclick="triggerNotification('Teleport Mode: Click any portal or floor space to jump')">
+          <a-text value="TELEPORT TO PORTAL" align="center" width="1.2" position="0 0 0.01" color="#ffffff"></a-text>
+        </a-plane>
+      </a-plane>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let activeSpaceIndex = 0;
+    let isGuidedTourActive = false;
+    let tourTimer = null;
+    let isNightMode = false;
+    let isMaterialOverlayActive = false;
+    let isUIVisible = true;
+    let isOrbitCamera = false;
+
+    // OPEN INDIAN MARKET - 4 PORTAL ZONES DATA
+    const INDIAN_MARKET_ZONES = [
+      {
+        id: 1,
+        title: "01. Vegetables & Fruits Corner",
+        category: "Sabzi & Phal Mandi",
+        desc: "Vibrant local stalls featuring fresh organic leafy greens, ripe mangoes, red tomatoes, and woven cane baskets under colorful fabric canopies.",
+        specs: "• Produce Stalls: 18\n• Focus: Seasonal & Organic\n• Baskets: Handwoven Cane\n• Lighting: Warm Natural Light",
+        bgColors: ['#064e3b', '#166534', '#eab308', '#0f172a']
+      },
+      {
+        id: 2,
+        title: "02. Fish & Meat Corner",
+        category: "Machli & Gosht Bazaar",
+        desc: "Dedicated wet market section with fresh river fish, prawns, ice counters, brass weighing scales, and hygienic stainless stalls.",
+        specs: "• Counters: Stainless Steel\n• Specialization: Fresh River & Sea Fish\n• Water & Ice: Continuous Supply",
+        bgColors: ['#0c4a6e', '#0284c7', '#38bdf8', '#0f172a']
+      },
+      {
+        id: 3,
+        title: "03. Pooja Items & Spices",
+        category: "Pooja Samagri & Masala",
+        desc: "Aromatic corner filled with incense stick smoke, brass lamps, fresh marigold garlands, red kumkum powder, and fragrant spice heaps.",
+        specs: "• Stalls: Brass & Spices\n• Highlights: Camphor, Kumkum, Haldi\n• Flowers: Marigold & Jasmine",
+        bgColors: ['#78350f', '#d97706', '#f59e0b', '#0f172a']
+      },
+      {
+        id: 4,
+        title: "04. Miscellaneous & Crafts",
+        category: "General & Hastkala Bazaar",
+        desc: "Bustling alley filled with terracotta clay pots, glass bangles, handmade wooden toys, copper utensils, and general household goods.",
+        specs: "• Stalls: Pottery & Handloom\n• Crafts: Terracotta & Woodwork\n• Bangle Corner: Glass & Lac",
+        bgColors: ['#581c87', '#a855f7', '#e879f9', '#0f172a']
+      }
+    ];
+
+    // GENERATE 360 PANORAMAS FOR EACH MARKET ZONE
+    function initPanoramaTextures() {
+      INDIAN_MARKET_ZONES.forEach((space) => {
+        const canvas = document.getElementById(`canvas-space-${space.id}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Sky Background Gradient
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#0f172a');
+        grad.addColorStop(0.3, space.bgColors[0]);
+        grad.addColorStop(0.6, space.bgColors[1]);
+        grad.addColorStop(0.8, '#1e293b');
+        grad.addColorStop(1, '#020617');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Indian Cloth Canopy Roof Stripes
+        ctx.fillStyle = space.bgColors[2];
+        for (let x = 0; x < w; x += 300) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + 120, h * 0.35);
+          ctx.lineTo(x + 60, h * 0.35);
+          ctx.lineTo(x - 60, 0);
+          ctx.fill();
+        }
+
+        // Market Stalls Background Structures
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        ctx.fillRect(100, h * 0.4, w - 200, h * 0.25);
+
+        // Decorative Indian Floral Garland Line across tops of stalls
+        ctx.fillStyle = '#f59e0b';
+        for (let fx = 120; fx < w - 120; fx += 40) {
+          ctx.beginPath();
+          ctx.arc(fx, h * 0.4, 14, 0, Math.PI);
+          ctx.fill();
+        }
+
+        // Ground Tile Pattern
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(0, h * 0.65, w, h * 0.35);
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 3;
+        for (let x = 0; x < w; x += 100) {
+          ctx.beginPath(); ctx.moveTo(x, h * 0.65); ctx.lineTo(x + 150, h); ctx.stroke();
+        }
+
+        // Center Zone Title Banner
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.fillRect(w / 2 - 450, h * 0.5 - 70, 900, 140);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(w / 2 - 450, h * 0.5 - 70, 900, 140);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 36px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(space.category.toUpperCase(), w / 2, h * 0.5 - 15);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '24px Inter, sans-serif';
+        ctx.fillText(space.title, w / 2, h * 0.5 + 30);
+      });
+    }
+
+    // TOGGLE MATERIAL OVERLAY MODE
+    function toggleMaterialOverlay() {
+      isMaterialOverlayActive = !isMaterialOverlayActive;
+      const btnText = document.getElementById('material-btn-text');
+      if (btnText) {
+        btnText.setAttribute('value', isMaterialOverlayActive ? 'MATERIAL OVERLAY: ON' : 'MATERIAL OVERLAY (ON/OFF)');
+      }
+      triggerNotification(isMaterialOverlayActive ? 'Material Wireframe Activated' : 'Material Overlay Disabled');
+    }
+
+    // TOGGLE UI VISIBILITY
+    function toggleUIVisibility() {
+      isUIVisible = !isUIVisible;
+      const hud = document.getElementById('2d-hud');
+      if (hud) hud.style.display = isUIVisible ? 'flex' : 'none';
+      triggerNotification(isUIVisible ? 'UI Panels Shown' : 'UI Panels Hidden (Clean View)');
+    }
+
+    // TOGGLE CAMERA VIEW
+    function toggleCameraMode() {
+      isOrbitCamera = !isOrbitCamera;
+      const camBtn = document.getElementById('camera-btn-text');
+      if (camBtn) {
+        camBtn.setAttribute('value', isOrbitCamera ? 'VIEW CAMERA: ORBIT MODE' : 'VIEW CAMERA (FREE/ORBIT) ▼');
+      }
+      triggerNotification(isOrbitCamera ? 'Camera Mode: Orbit View' : 'Camera Mode: Free First Person View');
+    }
+
+    // BUILD PORTAL SELECTION LIST ON 2D HUD
+    function buildSpaceLists() {
+      const list2d = document.getElementById('spaces-list');
+      if (!list2d) return;
+      list2d.innerHTML = '';
+
+      INDIAN_MARKET_ZONES.forEach((space, idx) => {
+        const btn2d = document.createElement('button');
+        btn2d.className = `w-full text-left p-2 rounded-lg border transition text-xs flex items-center justify-between ${
+          idx === activeSpaceIndex
+            ? 'bg-amber-600/30 border-amber-400 text-amber-200 font-semibold'
+            : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-700/60'
+        }`;
+        btn2d.onclick = () => loadSpace(idx);
+        btn2d.innerHTML = `
+          <div class="truncate">
+            <div class="font-medium truncate">${space.title}</div>
+            <div class="text-[10px] text-amber-400">${space.category}</div>
+          </div>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 flex-shrink-0 ml-1">#0${space.id}</span>
+        `;
+        list2d.appendChild(btn2d);
+      });
+    }
+
+    // LOAD SELECTED MARKET ZONE SKY ENVIRONMENT
+    function loadSpace(index) {
+      activeSpaceIndex = index;
+      const space = INDIAN_MARKET_ZONES[index];
+      if (!space) return;
+
+      const sky = document.getElementById('sky-bg');
+      if (sky) {
+        // Use generated 360 procedural canvas texture
+        const canvas = document.getElementById(`canvas-space-${space.id}`);
+        if (canvas) {
+          sky.setAttribute('src', canvas.toDataURL());
+        } else {
+          sky.setAttribute('color', space.bgColors[0]);
+        }
+      }
+
+      const activeInd = document.getElementById('active-space-indicator');
+      const activeTitle = document.getElementById('active-space-title');
+      const activeDesc = document.getElementById('active-space-desc');
+
+      if (activeInd) activeInd.innerText = `${index + 1} / ${INDIAN_MARKET_ZONES.length}`;
+      if (activeTitle) activeTitle.innerText = space.title;
+      if (activeDesc) activeDesc.innerText = space.desc;
+
+      buildSpaceLists();
+      triggerNotification(`Entered Portal #${space.id}: ${space.category}`);
+    }
+
+    // GUIDED TOUR AUTOMATED SLIDESHOW
+    function toggleGuidedTour() {
+      const tourBtn = document.getElementById('tour-btn');
+      if (isGuidedTourActive) {
+        clearInterval(tourTimer);
+        isGuidedTourActive = false;
+        if (tourBtn) {
+          tourBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+          tourBtn.classList.add('bg-amber-600', 'hover:bg-amber-500');
+          tourBtn.innerHTML = `▶ Auto Walkthrough`;
+        }
+        triggerNotification('Guided Market Tour Stopped');
+      } else {
+        isGuidedTourActive = true;
+        if (tourBtn) {
+          tourBtn.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+          tourBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+          tourBtn.innerHTML = `⏸ Pause Tour`;
+        }
+        triggerNotification('Started Guided Tour across 4 Portals (5s per portal)');
+
+        tourTimer = setInterval(() => {
+          let nextIndex = (activeSpaceIndex + 1) % INDIAN_MARKET_ZONES.length;
+          loadSpace(nextIndex);
+        }, 5000);
+      }
+    }
+
+    // TOGGLE DAY / EVENING LIGHTING
+    function toggleDayNight() {
+      const ambLight = document.getElementById('ambient-light');
+      const dirLight = document.getElementById('dir-light');
+
+      if (isNightMode) {
+        if (ambLight) ambLight.setAttribute('light', 'intensity', 1.0);
+        if (dirLight) dirLight.setAttribute('light', 'intensity', 0.9);
+        isNightMode = false;
+        triggerNotification('Lighting Mode: Bright Daylight');
+      } else {
+        if (ambLight) ambLight.setAttribute('light', 'intensity', 0.35);
+        if (dirLight) dirLight.setAttribute('light', 'intensity', 0.2);
+        isNightMode = true;
+        triggerNotification('Lighting Mode: Evening Lamp Glow');
+      }
+    }
+
+    // DYNAMIC RIG NAVIGATION
+    function moveRig(dx, dz) {
+      const rig = document.getElementById('rig');
+      if (!rig) return;
+      let pos = rig.getAttribute('position');
+      rig.setAttribute('position', {
+        x: pos.x + dx,
+        y: pos.y,
+        z: pos.z + dz
+      });
+    }
+
+    function rotateRig(angleDeg) {
+      const rig = document.getElementById('rig');
+      if (!rig) return;
+      let rot = rig.getAttribute('rotation');
+      rig.setAttribute('rotation', {
+        x: rot.x,
+        y: rot.y + angleDeg,
+        z: rot.z
+      });
+    }
+
+    // HUD TOAST NOTIFICATION
+    function triggerNotification(message) {
+      const toast = document.getElementById('toast-banner');
+      const toastMsg = document.getElementById('toast-message');
+      
+      if (toastMsg) toastMsg.innerText = message;
+      if (toast) {
+        toast.classList.remove('translate-x-full');
+        setTimeout(() => {
+          toast.classList.add('translate-x-full');
+        }, 3000);
+      }
+    }
+
+    // DOM LOAD INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      initPanoramaTextures();
+      buildSpaceLists();
+      loadSpace(0);
+    });
+  </script>
+</body>
+</html>
