@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VR Market Hub Interface</title>
+    <!-- Tailwind CSS for UI Overlay -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- A-Frame VR Framework -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Global Font Family set to Times New Roman */
+        body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, div { 
+            font-family: 'Times New Roman', Times, serif !important; 
+        }
+
+        body { 
+            overflow: hidden; 
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000; 
+        }
+        
+        /* Full-Screen Realistic Indoor Market Background Layer */
+        #market-bg-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=2000&q=95');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        /* Fallback / Image asset switcher canvas logic handles realistic market image */
+        .realistic-market-bg {
+            background-image: url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=95&w=2000&auto=format&fit=crop'), linear-gradient(180deg, rgba(20, 10, 30, 0.45) 0%, rgba(10, 5, 20, 0.55) 100%);
+            background-blend-mode: overlay;
+        }
+
+        /* Subtle Dark Gradient Overlay over Background Image for optimal readability */
+        .market-dark-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(12, 5, 20, 0.45) 0%, rgba(8, 2, 15, 0.75) 100%),
+                        linear-gradient(180deg, rgba(12, 4, 20, 0.5) 0%, rgba(5, 1, 10, 0.65) 100%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* 75-85% Opaque Dark Purple Glassmorphism Panel Styling */
+        .glass-card-purple {
+            background: rgba(28, 15, 45, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(192, 132, 252, 0.35);
+            box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.45), 0 0 15px rgba(147, 51, 234, 0.2);
+        }
+
+        /* Top Bar Nav Glass Panels */
+        .glass-nav-purple {
+            background: rgba(35, 18, 55, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(216, 180, 254, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Interactive Center Portal Cards & Motion */
+        .portal-pulse {
+            animation: pulsePortal 2.2s infinite alternate ease-in-out;
+        }
+        @keyframes pulsePortal {
+            0% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(192, 132, 252, 0.5)); }
+            100% { transform: scale(1.03); filter: drop-shadow(0 0 20px rgba(216, 180, 254, 0.9)); }
+        }
+
+        .zone-portal-btn {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            background: rgba(45, 20, 75, 0.88);
+            border: 2px solid rgba(192, 132, 252, 0.7);
+        }
+        .zone-portal-btn:hover {
+            transform: translateY(-5px) scale(1.04);
+            background: rgba(65, 25, 105, 0.95);
+            border-color: rgba(233, 213, 255, 1);
+            box-shadow: 0 15px 35px -5px rgba(192, 132, 252, 0.8);
+        }
+
+        /* Text Shadows & Glows */
+        .text-glow {
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9), 0 0 10px rgba(192, 132, 252, 0.5);
+        }
+        .text-shadow-sm {
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+        }
+
+        /* Teleport Screen Overlay */
+        #teleport-overlay {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 5, 25, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(192, 132, 252, 0.5);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-black text-white select-none">
+
+    <!-- 1. FULL-SCREEN REALISTIC MARKET BACKGROUND LAYER (IMAGE 1) -->
+    <div id="market-bg-layer" class="realistic-market-bg">
+        <!-- Embedded canvas fallback that generates realistic market hall panorama background -->
+        <canvas id="market-image-canvas" class="w-full h-full object-cover hidden"></canvas>
+    </div>
+    
+    <!-- 2. SUBTLE DARK GRADIENT OVERLAY FOR TEXT CONTRAST -->
+    <div class="market-dark-overlay"></div>
+
+    <!-- 3. TOP NAVIGATION BAR (MATCHING IMAGE 2 LAYOUT) -->
+    <header class="fixed top-0 left-0 right-0 z-30 p-4 flex justify-between items-center pointer-events-none">
+        <!-- Top Left Header Box -->
+        <div class="glass-nav-purple px-4 py-2.5 rounded-2xl flex items-center space-x-3 pointer-events-auto shadow-2xl">
+            <div class="w-9 h-9 rounded-xl bg-purple-600/40 border border-purple-300/60 flex items-center justify-center text-purple-200">
+                <i class="fa-solid fa-store text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold leading-none text-white tracking-wide">360° VR Marketplace</h1>
+                <p id="current-zone-tag" class="text-xs text-purple-300 font-medium mt-1">Select a zone to enter</p>
+            </div>
+        </div>
+
+        <!-- Top Right Action Controls -->
+        <div id="hub-controls" class="glass-nav-purple px-4 py-2.5 rounded-2xl flex items-center space-x-3 pointer-events-auto">
+            <!-- Cart Button -->
+            <button onclick="toggleCartModal()" class="relative flex items-center space-x-2 text-sm font-bold bg-purple-900/80 hover:bg-purple-800 text-purple-100 px-4 py-2 rounded-xl border border-purple-400/40 transition shadow-md">
+                <i class="fa-solid fa-cart-shopping text-purple-300"></i>
+                <span>Cart</span>
+                <span id="cart-count" class="bg-purple-300 text-purple-950 font-bold rounded-full w-4 h-4 text-xs flex items-center justify-center ml-1">0</span>
+            </button>
+            <!-- Go Back to Home Page Button -->
+            <button id="reset-cam-btn" onclick="returnToHub()" class="flex items-center space-x-2 text-sm font-bold bg-gradient-to-r from-purple-700 to-fuchsia-700 hover:from-purple-600 hover:to-fuchsia-600 text-white px-4 py-2 rounded-xl transition shadow-lg border border-purple-300/40">
+                <i class="fa-solid fa-house"></i>
+                <span>Go back to home page</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 4. CENTRAL INTERACTIVE HUB OVERLAY (MATCHING IMAGE 2 EXACT POSITIONS & CARDS) -->
+    <div id="interactive-map-container" class="absolute inset-0 z-10 flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+        
+        <div class="relative w-full max-w-6xl aspect-[16/9] rounded-3xl overflow-hidden p-6 sm:p-8 pointer-events-auto border border-purple-400/30 shadow-2xl bg-purple-950/20 backdrop-blur-sm">
+            
+            <!-- Center Grid Divider & Isometric Line Overlay -->
+            <svg class="absolute inset-0 w-full h-full opacity-25 pointer-events-none" viewBox="0 0 1000 562.5" preserveAspectRatio="none">
+                <line x1="500" y1="0" x2="500" y2="562.5" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="6,6"/>
+                <line x1="0" y1="281.25" x2="1000" y2="281.25" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="6,6"/>
+                <ellipse cx="500" cy="281.25" rx="140" ry="70" fill="rgba(147, 51, 234, 0.12)" stroke="#e9d5ff" stroke-width="1.5"/>
+            </svg>
+
+            <!-- ======================================================= -->
+            <!-- OUTER 4 CATEGORY CARDS (75-85% OPACITY DARK PURPLE)      -->
+            <!-- ======================================================= -->
+
+            <!-- Category Card 1: Vegetables & Fruits Corner (Top Left) -->
+            <div class="absolute top-6 left-8 max-w-xs z-10 glass-card-purple p-4 rounded-2xl">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/30 border border-emerald-400/80 flex items-center justify-center text-emerald-300 shadow-lg shrink-0">
+                        <i class="fa-solid fa-carrot text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-white leading-tight text-glow tracking-wide">Vegetables & Fruits Corner</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-purple-200/90 font-medium leading-relaxed text-shadow-sm">
+                    Fresh seasonal produce, local farmers, and a variety of fruits and vegetables from across regions.
+                </p>
+            </div>
+
+            <!-- Category Card 2: Fish & Meat Corner (Top Right) -->
+            <div class="absolute top-6 right-8 max-w-xs z-10 glass-card-purple p-4 rounded-2xl">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-cyan-500/30 border border-cyan-400/80 flex items-center justify-center text-cyan-300 shadow-lg shrink-0">
+                        <i class="fa-solid fa-fish text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-white leading-tight text-glow tracking-wide">Fish & Meat Corner</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-purple-200/90 font-medium leading-relaxed text-shadow-sm">
+                    Fresh catch from the coast, and hygienically sourced meat for your daily needs.
+                </p>
+            </div>
+
+            <!-- Category Card 3: Other Miscellaneous Items (Bottom Left) -->
+            <div class="absolute bottom-12 left-8 max-w-xs z-10 glass-card-purple p-4 rounded-2xl">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-fuchsia-500/30 border border-fuchsia-400/80 flex items-center justify-center text-fuchsia-300 shadow-lg shrink-0">
+                        <i class="fa-solid fa-bag-shopping text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-white leading-tight text-glow tracking-wide">Other Miscellaneous Items</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-purple-200/90 font-medium leading-relaxed text-shadow-sm">
+                    Household goods, clothing, accessories, daily essentials and more — all in one place.
+                </p>
+            </div>
+
+            <!-- Category Card 4: Pooja Items & Spices (Bottom Right) -->
+            <div class="absolute bottom-12 right-8 max-w-xs z-10 glass-card-purple p-4 rounded-2xl">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/30 border border-amber-400/80 flex items-center justify-center text-amber-300 shadow-lg shrink-0">
+                        <i class="fa-solid fa-fire text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-white leading-tight text-glow tracking-wide">Pooja Items & Spices</h2>
+                    </div>
+                </div>
+                <p class="text-xs text-purple-200/90 font-medium leading-relaxed text-shadow-sm">
+                    Sacred essentials, traditional spices and authentic flavours from local vendors.
+                </p>
+            </div>
+
+            <!-- ======================================================= -->
+            <!-- 4 ACTIVE CENTRAL PORTAL BUTTONS (WITH TELEPORT ACTION)  -->
+            <!-- ======================================================= -->
+
+            <!-- Central Active Portal 1: Enter Vegetables Corner -->
+            <div class="absolute top-[32%] left-[24%] -translate-x-1/2 -translate-y-1/2 z-30 portal-pulse">
+                <div onclick="teleportToZone('vegetables')" class="zone-portal-btn text-white rounded-2xl px-5 py-3 shadow-2xl flex items-center space-x-3.5">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500/30 flex items-center justify-center text-emerald-300 border border-emerald-400/60">
+                        <i class="fa-solid fa-door-open text-xs"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-[10px] font-bold text-emerald-300 tracking-wider uppercase">INTERACTIVE ZONE</span>
+                        <span class="text-xs font-bold text-white flex items-center space-x-1">
+                            <span>Enter Vegetables Corner</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Central Active Portal 2: Enter Fish & Meat Corner -->
+            <div class="absolute top-[32%] right-[24%] translate-x-1/2 -translate-y-1/2 z-30 portal-pulse">
+                <div onclick="teleportToZone('fish_meat')" class="zone-portal-btn text-white rounded-2xl px-5 py-3 shadow-2xl flex items-center space-x-3.5">
+                    <div class="w-8 h-8 rounded-full bg-cyan-500/30 flex items-center justify-center text-cyan-300 border border-cyan-400/60">
+                        <i class="fa-solid fa-door-open text-xs"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-[10px] font-bold text-cyan-300 tracking-wider uppercase">INTERACTIVE ZONE</span>
+                        <span class="text-xs font-bold text-white flex items-center space-x-1">
+                            <span>Enter Fish & Meat Corner</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Central Active Portal 3: Enter Miscellaneous Items -->
+            <div class="absolute bottom-[28%] left-[24%] -translate-x-1/2 translate-y-1/2 z-30 portal-pulse">
+                <div onclick="teleportToZone('miscellaneous')" class="zone-portal-btn text-white rounded-2xl px-5 py-3 shadow-2xl flex items-center space-x-3.5">
+                    <div class="w-8 h-8 rounded-full bg-fuchsia-500/30 flex items-center justify-center text-fuchsia-300 border border-fuchsia-400/60">
+                        <i class="fa-solid fa-door-open text-xs"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-[10px] font-bold text-fuchsia-300 tracking-wider uppercase">INTERACTIVE ZONE</span>
+                        <span class="text-xs font-bold text-white flex items-center space-x-1">
+                            <span>Enter Miscellaneous Items</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Central Active Portal 4: Enter Pooja Items & Spices -->
+            <div class="absolute bottom-[28%] right-[24%] translate-x-1/2 translate-y-1/2 z-30 portal-pulse">
+                <div onclick="teleportToZone('pooja_spices')" class="zone-portal-btn text-white rounded-2xl px-5 py-3 shadow-2xl flex items-center space-x-3.5">
+                    <div class="w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center text-amber-300 border border-amber-400/60">
+                        <i class="fa-solid fa-door-open text-xs"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-[10px] font-bold text-amber-300 tracking-wider uppercase">INTERACTIVE ZONE</span>
+                        <span class="text-xs font-bold text-white flex items-center space-x-1">
+                            <span>Enter Pooja Items & Spices</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CENTER TELEPORT / AREA SELECT CONTROL -->
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center">
+                <div onclick="toggleVRView()" class="cursor-pointer glass-card-purple px-5 py-2.5 rounded-2xl border border-purple-300/60 flex items-center space-x-3 shadow-2xl hover:scale-105 transition">
+                    <div class="w-7 h-7 rounded-lg bg-purple-500/30 flex items-center justify-center text-purple-200">
+                        <i class="fa-solid fa-eye text-sm"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="block text-[10px] text-purple-300 font-bold uppercase tracking-wider">TELEPORT (AREA SELECT)</span>
+                        <span class="text-xs font-bold text-white">Explore 360° Glasshouse Market Hall</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Prompt Text -->
+            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center space-x-2 text-xs text-purple-200/90 bg-purple-950/80 px-4 py-1.5 rounded-full border border-purple-400/30 shadow-lg">
+                <i class="fa-solid fa-hand-pointer text-purple-300"></i>
+                <span>Click any portal card to teleport inside that market stall</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Zone Interactive Floating Panel (Appears Inside Zone) -->
+    <div id="zone-interactive-ui" class="fixed right-6 top-20 z-20 w-80 glass-card-purple rounded-2xl p-4 hidden transition-all duration-300 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-purple-400/30 pb-3 mb-3">
+            <div class="flex items-center space-x-2.5">
+                <i id="zone-panel-icon" class="fa-solid fa-store text-xl"></i>
+                <div>
+                    <h3 id="zone-panel-title" class="text-base font-bold text-white">Zone Title</h3>
+                    <p id="zone-panel-sub" class="text-xs text-purple-300">Interactive Storefront</p>
+                </div>
+            </div>
+            <button onclick="returnToHub()" class="text-sm text-purple-300 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <p id="zone-panel-desc" class="text-xs text-purple-200/90 mb-3 leading-relaxed">Zone description goes here...</p>
+
+        <!-- Product Showcase List -->
+        <h4 class="text-xs font-semibold text-purple-300 uppercase tracking-wider mb-2">Featured Stalls & Items</h4>
+        <div id="zone-products-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <!-- Dynamic Items Inserted via JS -->
+        </div>
+
+        <!-- Vendor Dialogue Action -->
+        <div class="mt-4 pt-3 border-t border-purple-400/30 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-7 h-7 rounded-full bg-purple-900 border border-purple-300/50 flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-user-check text-purple-300"></i>
+                </div>
+                <span id="vendor-name" class="text-xs font-semibold text-purple-100">Local Vendor</span>
+            </div>
+            <button onclick="speakVendor()" class="text-xs bg-purple-700/80 hover:bg-purple-600 text-white px-3 py-1.5 rounded-xl transition border border-purple-400/40">
+                <i class="fa-solid fa-comments mr-1"></i>Talk
+            </button>
+        </div>
+    </div>
+
+    <!-- Cart Overlay Modal -->
+    <div id="cart-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card-purple w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-basket-shopping text-purple-300"></i>
+                    <span>Your VR Market Basket</span>
+                </h3>
+                <button onclick="toggleCartModal()" class="text-purple-300 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="cart-items" class="space-y-2 max-h-60 overflow-y-auto mb-4">
+                <p class="text-sm text-purple-300/80 text-center py-6">Your basket is empty. Explore stalls to add items!</p>
+            </div>
+            <div class="flex justify-between items-center pt-3 border-t border-purple-400/30 mb-4">
+                <span class="text-sm text-purple-200">Total Amount:</span>
+                <span id="cart-total" class="text-lg font-bold text-purple-300">₹0</span>
+            </div>
+            <button onclick="checkout()" class="w-full bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white py-2.5 rounded-xl text-sm font-bold transition shadow-lg">
+                Proceed to Checkout
+            </button>
+        </div>
+    </div>
+
+    <!-- Teleportation Overlay Animation -->
+    <div id="teleport-overlay" class="fixed inset-0 z-40 bg-slate-950 pointer-events-none opacity-0 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="relative flex items-center justify-center">
+            <div class="w-24 h-24 border-4 border-purple-500/30 border-t-purple-300 rounded-full animate-spin"></div>
+            <i id="portal-icon" class="fa-solid fa-bolt text-2xl text-purple-300 absolute"></i>
+        </div>
+        <p id="teleport-text" class="mt-4 text-purple-200 font-semibold tracking-wider text-base">TELEPORTING TO ZONE...</p>
+    </div>
+
+    <!-- 3D WebVR World Scene with 360° Market Hall Panorama Background -->
+    <a-scene embedded class="w-full h-screen absolute inset-0 z-0">
+        <a-assets>
+            <canvas id="market-panorama-canvas" width="2048" height="1024"></canvas>
+        </a-assets>
+
+        <!-- Dynamic Lighting -->
+        <a-ambient-light color="#ffffff" intensity="0.85"></a-ambient-light>
+        <a-directional-light position="-1 3 2" intensity="0.9" color="#fde047"></a-directional-light>
+
+        <!-- Camera Rig & Cursor -->
+        <a-entity id="rig" position="0 1.6 0">
+            <a-camera id="camera" look-controls="pointerLockEnabled: false" wasd-controls="enabled: true">
+                <a-cursor
+                    id="cursor"
+                    animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 150; from: 0.1 0.1 0.1; to: 1 1 1"
+                    event-set__mouseenter="_event: mouseenter; color: #c084fc"
+                    event-set__mouseleave="_event: mouseleave; color: #ffffff"
+                    raycaster="objects: .clickable"
+                    color="#ffffff"
+                    fuse="false">
+                </a-cursor>
+            </a-camera>
+        </a-entity>
+
+        <!-- 360 Sky mapped to Market Hall Panoramic Texture -->
+        <a-sky id="vr-sky" src="#market-panorama-canvas" rotation="0 -90 0"></a-sky>
+
+        <!-- Interactive 3D Hotspot Rings Inside 360 Market Space -->
+        <a-entity id="zone-vegetables" position="-8 0 -6">
+            <a-cylinder position="0 0.1 0" radius="1.8" height="0.1" color="#22c55e" opacity="0.6"></a-cylinder>
+            <a-ring class="clickable" onclick="returnToHub()" position="0 1.8 0" radius-inner="0.9" radius-outer="1.2" color="#4ade80" material="side: double" rotation="0 45 0">
+                <a-text value="RETURN TO HOME HUB" align="center" position="0 0 0.1" scale="0.6 0.6 0.6" color="#ffffff"></a-text>
+            </a-ring>
+        </a-entity>
+
+        <a-entity id="zone-fish_meat" position="8 0 -6">
+            <a-cylinder position="0 0.1 0" radius="1.8" height="0.1" color="#06b6d4" opacity="0.6"></a-cylinder>
+            <a-ring class="clickable" onclick="returnToHub()" position="0 1.8 0" radius-inner="0.9" radius-outer="1.2" color="#67e8f9" material="side: double" rotation="0 -45 0">
+                <a-text value="RETURN TO HOME HUB" align="center" position="0 0 0.1" scale="0.6 0.6 0.6" color="#ffffff"></a-text>
+            </a-ring>
+        </a-entity>
+
+        <a-entity id="zone-miscellaneous" position="-8 0 8">
+            <a-cylinder position="0 0.1 0" radius="1.8" height="0.1" color="#d946ef" opacity="0.6"></a-cylinder>
+            <a-ring class="clickable" onclick="returnToHub()" position="0 1.8 0" radius-inner="0.9" radius-outer="1.2" color="#f0abfc" material="side: double" rotation="0 135 0">
+                <a-text value="RETURN TO HOME HUB" align="center" position="0 0 0.1" scale="0.6 0.6 0.6" color="#ffffff"></a-text>
+            </a-ring>
+        </a-entity>
+
+        <a-entity id="zone-pooja_spices" position="8 0 8">
+            <a-cylinder position="0 0.1 0" radius="1.8" height="0.1" color="#f59e0b" opacity="0.6"></a-cylinder>
+            <a-ring class="clickable" onclick="returnToHub()" position="0 1.8 0" radius-inner="0.9" radius-outer="1.2" color="#fcd34d" material="side: double" rotation="0 -135 0">
+                <a-text value="RETURN TO HOME HUB" align="center" position="0 0 0.1" scale="0.6 0.6 0.6" color="#ffffff"></a-text>
+            </a-ring>
+        </a-entity>
+
+    </a-scene>
+
+    <!-- JS Application Logic -->
+    <script>
+        // Render 360 equirectangular texture recreating the realistic indoor glasshouse market photo
+        function generateMarketHall360Texture() {
+            const canvas = document.getElementById('market-panorama-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            // 1. Tiled Marble Walkway Floor
+            const gradFloor = ctx.createLinearGradient(0, height * 0.5, 0, height);
+            gradFloor.addColorStop(0, '#d8cbba');
+            gradFloor.addColorStop(0.5, '#ede0d0');
+            gradFloor.addColorStop(1, '#c5b4a0');
+            ctx.fillStyle = gradFloor;
+            ctx.fillRect(0, height * 0.5, width, height * 0.5);
+
+            // Tile Grid Lines
+            ctx.strokeStyle = 'rgba(150, 130, 110, 0.3)';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < width; x += 80) {
+                ctx.beginPath();
+                ctx.moveTo(x, height * 0.5);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            // 2. Glass Roof & Skylight Roof Structure
+            const gradCeiling = ctx.createLinearGradient(0, 0, 0, height * 0.5);
+            gradCeiling.addColorStop(0, '#58738a');
+            gradCeiling.addColorStop(0.35, '#829cb2');
+            gradCeiling.addColorStop(0.5, '#785335');
+            ctx.fillStyle = gradCeiling;
+            ctx.fillRect(0, 0, width, height * 0.5);
+
+            // Curved Wooden Canopy Arches
+            ctx.fillStyle = '#96633b';
+            for (let x = 0; x < width; x += 220) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.bezierCurveTo(x + 40, height * 0.25, x + 180, height * 0.25, x + 220, 0);
+                ctx.lineTo(x + 220, height * 0.35);
+                ctx.bezierCurveTo(x + 180, height * 0.38, x + 40, height * 0.38, x, height * 0.35);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Decorative Hanging Plants & Foliage
+            ctx.fillStyle = '#2d5a27';
+            for (let x = 0; x < width; x += 110) {
+                ctx.beginPath();
+                ctx.arc(x, height * 0.22, 28 + Math.random() * 15, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Central Archway
+            const archX = width * 0.5;
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath();
+            ctx.arc(archX, height * 0.42, 120, Math.PI, 0, false);
+            ctx.rect(archX - 120, height * 0.42, 240, 90);
+            ctx.fill();
+
+            // Archway Foliage
+            ctx.fillStyle = '#1e3a1e';
+            ctx.beginPath();
+            ctx.arc(archX, height * 0.42, 140, Math.PI, 0, false);
+            ctx.rect(archX - 140, height * 0.42, 280, 90);
+            ctx.fill();
+
+            // 3. Wooden Market Stalls & Displays
+            // Produce Stall (Left)
+            ctx.fillStyle = '#a16a3c';
+            ctx.fillRect(50, height * 0.52, 450, 110);
+            ctx.fillStyle = '#ef4444'; ctx.fillRect(80, height * 0.51, 80, 20);
+            ctx.fillStyle = '#22c55e'; ctx.fillRect(180, height * 0.51, 100, 20);
+            ctx.fillStyle = '#f97316'; ctx.fillRect(300, height * 0.51, 80, 20);
+
+            // Pooja & Spices Stall (Right)
+            ctx.fillStyle = '#8f572c';
+            ctx.fillRect(width - 500, height * 0.52, 450, 110);
+            ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(width - 420, height * 0.51, 20, 0, Math.PI, true); ctx.fill();
+            ctx.fillStyle = '#dc2626'; ctx.beginPath(); ctx.arc(width - 340, height * 0.51, 22, 0, Math.PI, true); ctx.fill();
+            ctx.fillStyle = '#78350f'; ctx.beginPath(); ctx.arc(width - 260, height * 0.51, 18, 0, Math.PI, true); ctx.fill();
+
+            // Update Sky Texture
+            const sky = document.getElementById('vr-sky');
+            if (sky && sky.components && sky.components.material) {
+                sky.components.material.material.map.needsUpdate = true;
+            }
+        }
+
+        window.onload = function() {
+            generateMarketHall360Texture();
+        };
+
+        // Zone Data
+        const zoneDetails = {
+            vegetables: { 
+                x: -8, y: 1.6, z: -3, 
+                name: "Vegetables & Fruits Corner", 
+                color: "#22c55e", 
+                icon: "fa-carrot", 
+                vendor: "Ramesh (Farmer Direct)",
+                desc: "Fresh seasonal produce, local farmers, and a variety of fruits and vegetables from across regions.",
+                products: [
+                    { name: 'Fresh Organic Tomatoes (1kg)', price: 40 },
+                    { name: 'Farm Fresh Apples (6 pcs)', price: 120 },
+                    { name: 'Green Spinach Bunch', price: 25 },
+                    { name: 'Alphonso Mangoes (1kg)', price: 250 }
+                ]
+            },
+            fish_meat: { 
+                x: 8, y: 1.6, z: -3, 
+                name: "Fish & Meat Corner", 
+                color: "#06b6d4", 
+                icon: "fa-fish", 
+                vendor: "Sultan Coastal Catch",
+                desc: "Fresh catch from the coast, and hygienically sourced meat for your daily needs.",
+                products: [
+                    { name: 'Fresh Seer Fish Cutlets (500g)', price: 480 },
+                    { name: 'Cleaned Tiger Prawns (500g)', price: 550 },
+                    { name: 'Fresh Tender Chicken (1kg)', price: 280 }
+                ]
+            },
+            miscellaneous: { 
+                x: -8, y: 1.6, z: 10, 
+                name: "Other Miscellaneous Items", 
+                color: "#d946ef", 
+                icon: "fa-bag-shopping", 
+                vendor: "Anita Daily Essentials",
+                desc: "Household goods, clothing, accessories, daily essentials and more — all in one place.",
+                products: [
+                    { name: 'Handcrafted Canvas Shopping Bag', price: 150 },
+                    { name: 'Stainless Steel Flask (1L)', price: 490 },
+                    { name: 'Organic Cotton Kitchen Towels', price: 199 }
+                ]
+            },
+            pooja_spices: { 
+                x: 8, y: 1.6, z: 10, 
+                name: "Pooja Items & Spices", 
+                color: "#f59e0b", 
+                icon: "fa-fire", 
+                vendor: "Pandit Sacred Goods",
+                desc: "Sacred essentials, traditional spices and authentic flavours from local vendors.",
+                products: [
+                    { name: 'Organic Cardamom & Cloves Pack', price: 220 },
+                    { name: 'Handmade Brass Diya Set', price: 350 },
+                    { name: 'Pure Sandalwood Agarbatti', price: 90 }
+                ]
+            }
+        };
+
+        let activeCart = [];
+
+        // Teleport to Specific Zone
+        function teleportToZone(zoneKey) {
+            const zone = zoneDetails[zoneKey];
+            if (!zone) return;
+
+            const overlay = document.getElementById('teleport-overlay');
+            const overlayText = document.getElementById('teleport-text');
+            const portalIcon = document.getElementById('portal-icon');
+            const tag = document.getElementById('current-zone-tag');
+
+            overlayText.innerText = `TELEPORTING TO ${zone.name.toUpperCase()}...`;
+            overlayText.style.color = zone.color;
+            portalIcon.className = `fa-solid ${zone.icon} text-2xl absolute animate-bounce`;
+            portalIcon.style.color = zone.color;
+
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+
+            setTimeout(() => {
+                // Relocate Camera Rig
+                const rig = document.getElementById('rig');
+                rig.setAttribute('position', `${zone.x} ${zone.y} ${zone.z}`);
+
+                // Hide Main Map Overlay
+                document.getElementById('interactive-map-container').classList.add('hidden');
+                tag.innerText = `Active Zone: ${zone.name}`;
+
+                // Populate Zone Specific Floating Interface
+                renderZoneInterface(zone);
+
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-100');
+                    overlay.classList.add('opacity-0');
+                }, 300);
+            }, 500);
+        }
+
+        // Render Floating Storefront UI
+        function renderZoneInterface(zone) {
+            const uiPanel = document.getElementById('zone-interactive-ui');
+            const panelIcon = document.getElementById('zone-panel-icon');
+            const panelTitle = document.getElementById('zone-panel-title');
+            const panelDesc = document.getElementById('zone-panel-desc');
+            const vendorName = document.getElementById('vendor-name');
+            const productsList = document.getElementById('zone-products-list');
+
+            panelIcon.className = `fa-solid ${zone.icon} text-xl`;
+            panelIcon.style.color = zone.color;
+            panelTitle.innerText = zone.name;
+            panelDesc.innerText = zone.desc;
+            vendorName.innerText = zone.vendor;
+
+            productsList.innerHTML = zone.products.map(prod => `
+                <div class="flex items-center justify-between bg-purple-950/80 p-2.5 rounded-xl border border-purple-400/30">
+                    <div>
+                        <p class="text-xs font-semibold text-purple-100">${prod.name}</p>
+                        <p class="text-xs font-bold text-purple-300">₹${prod.price}</p>
+                    </div>
+                    <button onclick="addToCart('${prod.name}', ${prod.price})" class="bg-gradient-to-r from-purple-700 to-fuchsia-700 hover:from-purple-600 hover:to-fuchsia-600 text-white text-xs font-bold px-3 py-1 rounded-lg transition flex items-center space-x-1 shadow-md">
+                        <i class="fa-solid fa-plus text-[9px]"></i>
+                        <span>Add</span>
+                    </button>
+                </div>
+            `).join('');
+
+            uiPanel.classList.remove('hidden');
+        }
+
+        function addToCart(name, price) {
+            activeCart.push({ name, price });
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = activeCart.length;
+            const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+
+            if (activeCart.length === 0) {
+                container.innerHTML = `<p class="text-sm text-purple-300/80 text-center py-6">Your basket is empty. Explore stalls to add items!</p>`;
+                totalEl.innerText = '₹0';
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = activeCart.map((item, idx) => {
+                total += item.price;
+                return `
+                    <div class="flex items-center justify-between bg-purple-950/80 p-2.5 rounded-xl border border-purple-400/30">
+                        <span class="text-xs text-purple-100 font-medium">${item.name}</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-bold text-purple-300">₹${item.price}</span>
+                            <button onclick="removeFromCart(${idx})" class="text-red-400 hover:text-red-300 text-xs px-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            totalEl.innerText = `₹${total}`;
+        }
+
+        function removeFromCart(idx) {
+            activeCart.splice(idx, 1);
+            updateCartUI();
+        }
+
+        function toggleCartModal() {
+            document.getElementById('cart-modal').classList.toggle('hidden');
+        }
+
+        function checkout() {
+            if (activeCart.length === 0) return;
+            const msgBox = document.createElement('div');
+            msgBox.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-purple-700 border border-purple-300 text-white text-sm px-5 py-2.5 rounded-2xl shadow-2xl z-50';
+            msgBox.innerText = 'Order placed successfully in Virtual Market!';
+            document.body.appendChild(msgBox);
+            setTimeout(() => msgBox.remove(), 3000);
+
+            activeCart = [];
+            updateCartUI();
+            toggleCartModal();
+        }
+
+        function speakVendor() {
+            const msgBox = document.createElement('div');
+            msgBox.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-purple-900 border border-purple-300 text-purple-100 text-sm px-5 py-2.5 rounded-2xl shadow-2xl z-50';
+            msgBox.innerText = "Vendor: 'Welcome to our corner! Let me know if you need fresh recommendations today.'";
+            document.body.appendChild(msgBox);
+            setTimeout(() => msgBox.remove(), 3500);
+        }
+
+        function returnToHub() {
+            const overlay = document.getElementById('teleport-overlay');
+            const overlayText = document.getElementById('teleport-text');
+            const tag = document.getElementById('current-zone-tag');
+
+            overlayText.innerText = "RETURNING TO HOME MARKET MENU...";
+            overlayText.style.color = "#c084fc";
+
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+
+            setTimeout(() => {
+                const rig = document.getElementById('rig');
+                rig.setAttribute('position', "0 1.6 0");
+
+                document.getElementById('interactive-map-container').classList.remove('hidden');
+                document.getElementById('zone-interactive-ui').classList.add('hidden');
+                tag.innerText = "Select a zone to enter";
+
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-100');
+                    overlay.classList.add('opacity-0');
+                }, 300);
+            }, 500);
+        }
+
+        function toggleVRView() {
+            document.getElementById('interactive-map-container').classList.add('hidden');
+            document.getElementById('current-zone-tag').innerText = "360° Free Look Mode";
+        }
+    </script>
+</body>
+</html>
