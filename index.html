@@ -13,7 +13,17 @@
       font-family: 'Times New Roman', Times, serif !important;
     }
     
-    /* Realistic Market Background */
+    /* Homepage High-Clarity Exterior Market Background */
+    .bg-homepage-exterior {
+      background-image: linear-gradient(rgba(12, 6, 22, 0.35), rgba(12, 6, 22, 0.45)), 
+                        url('image_043968.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    /* Realistic Indoor Market Background (Page 2) */
     .bg-market-real {
       background-image: linear-gradient(rgba(12, 6, 22, 0.45), rgba(12, 6, 22, 0.55)), 
                         url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2000&auto=format&fit=crop');
@@ -30,6 +40,15 @@
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(168, 85, 247, 0.35);
       box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    }
+
+    /* Mauve / Purple Glassmorphic Header Badge (Homepage) */
+    .glass-header-badge {
+      background: linear-gradient(135deg, rgba(67, 26, 120, 0.88), rgba(46, 16, 85, 0.92));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(192, 132, 252, 0.5);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(168, 85, 247, 0.3);
     }
 
     /* Portal action buttons */
@@ -65,10 +84,50 @@
     }
   </style>
 </head>
-<body class="bg-black text-white min-h-screen overflow-x-hidden select-none bg-market-real">
+<body id="main-body" class="bg-black text-white min-h-screen overflow-x-hidden select-none bg-homepage-exterior">
 
-  <!-- ==================== MAIN UI OVERLAY CONTAINER ==================== -->
-  <div id="hub-interface" class="relative z-10 min-h-screen flex flex-col justify-between p-4 md:p-6">
+  <!-- ==================== PAGE 1: HOMEPAGE OVERLAY ==================== -->
+  <div id="homepage-view" class="relative z-20 min-h-screen flex flex-col justify-between p-6">
+    <!-- Top Right Market Title Badge -->
+    <header class="flex justify-end w-full">
+      <div class="glass-header-badge px-6 py-3.5 rounded-2xl flex items-center gap-3 shadow-2xl">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/30 border border-purple-300/50 flex items-center justify-center text-purple-200">
+          <i class="fas fa-landmark text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold tracking-wide text-purple-100 leading-tight">
+            Sardar Vallabhbhai Patel Market
+          </h1>
+          <p class="text-xs text-purple-300/80">360° Virtual Architectural Hub</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Center Call-to-Action "Explore Market" Button -->
+    <main class="flex-1 flex flex-col items-center justify-center text-center my-auto">
+      <div class="glass-card p-8 md:p-12 rounded-3xl max-w-xl w-full border border-purple-400/40 shadow-2xl flex flex-col items-center space-y-6">
+        <div class="w-16 h-16 rounded-2xl bg-purple-600/40 border border-purple-300/60 flex items-center justify-center text-purple-200 shadow-lg">
+          <i class="fas fa-vr-cardboard text-3xl"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-purple-100 tracking-wide mb-2">Welcome to the Marketplace</h2>
+          <p class="text-sm text-purple-200/80">Step into the 360° interactive virtual hub and explore market zones.</p>
+        </div>
+        
+        <button onclick="goToMarketHub()" class="teleport-pulse px-10 py-4 rounded-full bg-gradient-to-r from-purple-700 via-purple-600 to-fuchsia-600 hover:from-purple-600 hover:to-fuchsia-500 text-white font-bold text-lg flex items-center gap-3 transition-all duration-300 transform hover:scale-105 border border-purple-300/50 shadow-2xl">
+          <span>Explore Market</span>
+          <i class="fas fa-arrow-right text-purple-200"></i>
+        </button>
+      </div>
+    </main>
+
+    <footer class="text-center py-2 text-xs text-purple-200/70">
+      Click "Explore Market" to enter the 360° VR Market Portal
+    </footer>
+  </div>
+
+  <!-- ==================== PAGE 2: MAIN UI OVERLAY CONTAINER ==================== -->
+  <div id="hub-interface" class="relative z-10 min-h-screen hidden flex-col justify-between p-4 md:p-6">
     
     <!-- TOP HEADER / NAV BAR -->
     <header class="glass-nav rounded-2xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4 max-w-7xl mx-auto w-full shadow-2xl">
@@ -275,6 +334,32 @@
   <script>
     let cart = [];
 
+    function goToMarketHub() {
+      document.getElementById('homepage-view').classList.add('hidden');
+      const hub = document.getElementById('hub-interface');
+      hub.classList.remove('hidden');
+      hub.classList.add('flex');
+      
+      const body = document.getElementById('main-body');
+      body.classList.remove('bg-homepage-exterior');
+      body.classList.add('bg-market-real');
+    }
+
+    function resetHomeView() {
+      exitVRView();
+      const hub = document.getElementById('hub-interface');
+      hub.classList.add('hidden');
+      hub.classList.remove('flex');
+      
+      document.getElementById('homepage-view').classList.remove('hidden');
+      
+      const body = document.getElementById('main-body');
+      body.classList.remove('bg-market-real');
+      body.classList.add('bg-homepage-exterior');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function enterZone(zoneKey) {
       const titles = {
         'vegetables': 'Vegetables & Fruits Corner',
@@ -296,12 +381,9 @@
 
     function exitVRView() {
       document.getElementById('vr-container').classList.add('hidden');
-      document.getElementById('hub-interface').classList.remove('hidden');
-    }
-
-    function resetHomeView() {
-      exitVRView();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const hub = document.getElementById('hub-interface');
+      hub.classList.remove('hidden');
+      hub.classList.add('flex');
     }
 
     function toggleCartModal() {
