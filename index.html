@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-widtah, initial-scale=1.0">
   <title>360° VR Market Hub Interface</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
@@ -367,14 +367,25 @@
         'misc': 'Other Miscellaneous Items',
         'pooja': 'Pooja Items & Spices'
       };
+
+      const skyBg = document.getElementById('vr-sky-bg');
       
-      document.getElementById('vr-zone-title-badge').innerText = 'Inside ' + titles[zoneKey];
+      // Update 360 sky panoramic texture specifically for Vegetables Corner virtual tour
+      if (zoneKey === 'vegetables') {
+        skyBg.setAttribute('src', 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2000&auto=format&fit=crop');
+      } else {
+        skyBg.setAttribute('src', 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2000&auto=format&fit=crop');
+      }
+      
+      document.getElementById('vr-zone-title-badge').innerText = 'Inside 360° Virtual Tour: ' + titles[zoneKey];
       document.getElementById('hub-interface').classList.add('hidden');
       document.getElementById('vr-container').classList.remove('hidden');
     }
 
     function enter360Hall() {
-      document.getElementById('vr-zone-title-badge').innerText = '360° Glasshouse Market Hall';
+      const skyBg = document.getElementById('vr-sky-bg');
+      skyBg.setAttribute('src', 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2000&auto=format&fit=crop');
+      document.getElementById('vr-zone-title-badge').innerText = '360° Glasshouse Market Hall Tour';
       document.getElementById('hub-interface').classList.add('hidden');
       document.getElementById('vr-container').classList.remove('hidden');
     }
